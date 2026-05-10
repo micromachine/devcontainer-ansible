@@ -1,0 +1,23 @@
+{
+  "name": "ProfitCard Ansible",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "redhat.ansible",
+        "redhat.vscode-yaml",
+        "ms-python.python"
+      ],
+      "settings": {
+        "ansible.python.interpreterPath": "/usr/bin/python3"
+      }
+    }
+  },
+  "remoteUser": "vscode",
+  "postCreateCommand": "ansible --version"
+}
