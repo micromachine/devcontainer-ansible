@@ -1,0 +1,103 @@
+---
+- name: Initialize Ansible project structure
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    project_name: "live-coding"
+    target: "{{ playbook_dir }}/../live-coding"
+
+  tasks:
+    - name: Create directory structure
+      ansible.builtin.file:
+        path: "{{ target }}/{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - inventories/production/group_vars
+        - inventories/production/host_vars
+        - inventories/staging/group_vars
+        - inventories/staging/host_vars
+        - playbooks
+        - group_vars
+        - host_vars
+        - roles
+
+    - name: Create site.yml
+      ansible.builtin.copy:
+        dest: "{{ target }}/playbooks/site.yml"
+        mode: "0644"
+        force: false
+        content: |
+          ---
+          - name: {{ project_name }}
+            hosts: all
+            become: true
+            roles: []
+            tasks:
+              - name: Print hello
+                ansible.builtin.debug:
+                  msg: "Hello from {{ '{{' }} inventory_hostname {{ '}}' }}"
+
+    - name: Create production inventory
+      ansible.builtin.copy:
+        dest: "{{ target }}/inventories/production/hosts"
+        mode: "0644"
+        force: false
+        content: |
+          [webservers]
+          web1.example.com
+          web2.example.com
+
+          [dbservers]
+          db1.example.com
+
+          [all:vars]
+          ansible_user=ubuntu
+
+    - name: Create staging inventory
+      ansible.builtin.copy:
+        dest: "{{ target }}/inventories/staging/hosts"
+        mode: "0644"
+        force: false
+        content: |
+          [webservers]
+          web-staging.example.com
+
+          [dbservers]
+          db-staging.example.com
+
+          [all:vars]
+          ansible_user=ubuntu
+
+    - name: Create group_vars/all.yml
+      ansible.builtin.copy:
+        dest: "{{ target }}/group_vars/all.yml"
+        mode: "0644"
+        force: false
+        content: |
+          ---
+          env: production
+
+    - name: Create ansible.cfg
+      ansible.builtin.copy:
+        dest: "{{ target }}/ansible.cfg"
+        mode: "0644"
+        force: false
+        content: |
+          [defaults]
+          inventory           = inventories/production/hosts
+          roles_path          = roles
+          host_key_checking   = False
+          retry_files_enabled = False
+
+          [ssh_connection]
+          pipelining = True
+
+    - name: Print usage
+      ansible.builtin.debug:
+        msg:
+          - "Project '{{ project_name }}' created in '{{ target }}'"
+          - "ansible-playbook playbooks/site.yml -i inventories/staging/hosts"
+          - "ansible-playbook playbooks/site.yml -i inventories/production/hosts"
